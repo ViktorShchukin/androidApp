@@ -1,7 +1,6 @@
 package com.example.test
 
 import android.os.Bundle
-import android.webkit.WebView
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -9,10 +8,9 @@ import android.hardware.SensorManager
 import android.hardware.SensorEventListener
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.magnifier
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,7 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.test.ui.theme.TestTheme
-import java.lang.IllegalArgumentException
+import data.utils.KalmanFilter
 
 class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
@@ -30,9 +28,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     private var accuracy: Int = 0
     private var lastAccelerometerUpdateTime: Long = 0
-    private var x: Float = 0F
-    private var y: Float = 0F
-    private var z: Float = 0F
+    private var x: Double = 0.0
+    private var y: Double = 0.0
+    private var z: Double = 0.0
+
+    private val dfkX = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
+    private val dfkY = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
+    private val dfkZ = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +53,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
-            x = event.values[0]
-            y = event.values[1]
-            z = event.values[2]
+            x = dfkX.correct(event.values[0].toDouble())
+            y = dfkY.correct(event.values[1].toDouble())
+            z = dfkZ.correct(event.values[2].toDouble())
             lastAccelerometerUpdateTime = event.timestamp
             this.drawPage()
         }
@@ -100,9 +102,15 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DrawAccelerometerValue(timeStamp: Long, x:Float, y:Float, z:Float) {
+fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double) {
     Surface {
-        Text(text = "[ $timeStamp ] x: $x , y: $y, z: $z")
+        Column {
+            Text(text = "[ $timeStamp ]")
+            Text(text = "x: $x")
+            Text(text = "y: $y")
+            Text(text = "z: $z")
+        }
+//        Text(text = "[ $timeStamp ] x: $x , y: $y, z: $z")
     }
 }
 
