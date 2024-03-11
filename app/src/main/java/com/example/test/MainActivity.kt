@@ -20,7 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.test.ui.theme.TestTheme
-import data.utils.KalmanFilter
+import util.data.filter.KalmanFilter
+import util.data.distance.DistanceCalculator
 
 class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
@@ -35,6 +36,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val dfkX = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
     private val dfkY = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
     private val dfkZ = KalmanFilter(2.0, 15.0, 1.0, 1.0,)
+
+    private val distCalcX = DistanceCalculator()
+    private val distCalcY = DistanceCalculator()
+    private val distCalcZ = DistanceCalculator()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,7 +89,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                     DrawAccelerometerValue(timeStamp = lastAccelerometerUpdateTime,
                                             x = this.x,
                                             y = this.y,
-                                            z = this.z)
+                                            z = this.z,
+                                            distX = this.distCalcX,
+                                            distY = this.distCalcY,
+                                            distZ = this.distCalcZ)
                 }
             }
         }
@@ -102,13 +110,16 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double) {
+fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double, distX: DistanceCalculator, distY: DistanceCalculator, distZ: DistanceCalculator) {
     Surface {
         Column {
             Text(text = "[ $timeStamp ]")
-            Text(text = "x: $x")
-            Text(text = "y: $y")
-            Text(text = "z: $z")
+            Text(text = "acceleration x: $x")
+            Text(text = "acceleration y: $y")
+            Text(text = "acceleration z: $z")
+            Text(text = "distance x: ${distX.getDistance(x, timeStamp)}")
+            Text(text = "distance y: ${distY.getDistance(y, timeStamp)}")
+            Text(text = "distance z: ${distZ.getDistance(z, timeStamp)}")
         }
 //        Text(text = "[ $timeStamp ] x: $x , y: $y, z: $z")
     }
@@ -120,4 +131,8 @@ fun GreetingPreview() {
     TestTheme {
         Greeting("Android")
     }
+}
+
+fun nanosToSecond(nonos: Long): Double {
+    return nonos / 1E9
 }

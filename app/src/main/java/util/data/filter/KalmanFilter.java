@@ -1,5 +1,6 @@
-package data.utils;
+package util.data.filter;
 
+//todo not tested
 public class KalmanFilter {
 
     private final double f;  // factor of real value to previous real value
