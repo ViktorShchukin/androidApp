@@ -5,41 +5,51 @@ package util.data.distance
  */
 class  DistanceCalculator {
     data class Acceleration (val acceleration: Double, val timestamp: Long)
-    data class Speed (val speed: Double, val timestamp: Long)
+    data class Velocity (val speed: Double, val timestamp: Long)
 
     private var distance: Double = 0.0
     private var accelerationPrevious: Acceleration? = null
     private var accelerationNow: Acceleration? = null
-    private var speedPrevious: Speed? = null
-    private var speedNow: Speed? = null
+//    private var speedPrevious: Speed? = null
+//    private var speedNow: Speed? = null
+    private var velocityPrevious: Double = 0.0
+//    private var velocityDelta: Double = 0.0
+    private fun getVelocityDelta(): Double {
+        val velocityDelta =
+            (accelerationNow!!.acceleration + accelerationPrevious!!.acceleration) / 2 * (accelerationNow!!.timestamp - accelerationPrevious!!.timestamp) / 1E9
+        return velocityDelta
+    }
 
-    private fun setSpeed() {
-        val speedCalculated =
-            (accelerationNow!!.acceleration + accelerationPrevious!!.acceleration) / 2 * (accelerationNow!!.timestamp - accelerationPrevious!!.timestamp) * 1E9
-        speedPrevious = speedNow
-        speedNow = Speed(speedCalculated, accelerationNow!!.timestamp)
+    fun addAcceleration(acceleration: Double, timestamp: Long): Unit {
+        //check if it's the first measurement of acceleration. If true, return distance == 0
+        if (accelerationNow == null) {
+            accelerationNow = Acceleration(acceleration, timestamp)
+            return
+        }
+        accelerationPrevious = accelerationNow
+        accelerationNow = Acceleration(acceleration, timestamp)
+        //check that all speeds are there after set. If not return distance == 0
+        val velocityDelta: Double = this.getVelocityDelta()
+        val distanceDelta: Double = (velocityPrevious + (velocityPrevious + velocityDelta) ) / 2 * (accelerationNow!!.timestamp - accelerationPrevious!!.timestamp) / 1E9
+        velocityPrevious += velocityDelta
+        if (velocityDelta<0.1) {
+            velocityPrevious = velocityPrevious / 2
+        }
+        distance += distanceDelta
 
     }
 
     /**
      * @return distance in meters
      */
-    fun getDistance(acceleration: Double, timestamp: Long): Double {
-        //check if it's the first measurement of acceleration. If true, return distance == 0
-        if (accelerationNow == null) {
-            accelerationNow = Acceleration(acceleration, timestamp)
-            return distance
-        }
-        accelerationPrevious = accelerationNow
-        accelerationNow = Acceleration(acceleration, timestamp)
-        this.setSpeed()
-        //check that all speeds are there after set. If not return distance == 0
-        if (speedNow != null && speedPrevious != null) {
-            val distNow: Double = (speedNow!!.speed + speedPrevious!!.speed) / 2 * (speedNow!!.timestamp - speedPrevious!!.timestamp) * 1E9
-            distance += distNow
-            return distance
-        }
-        return distance
+    fun getDistance(): Double {
+        return this.distance
+    }
+
+    fun setToDefault(): Unit {
+        accelerationNow = null
+        velocityPrevious = 0.0
+        distance = 0.0
     }
 
 }
