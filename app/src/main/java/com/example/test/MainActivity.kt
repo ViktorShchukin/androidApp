@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.test.tools.HTTPClient
 import com.example.test.ui.theme.TestTheme
 import util.data.distance.DistanceCalculator
 import util.data.filter.KalmanFilter
@@ -40,6 +42,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val distCalcX = DistanceCalculator()
     private val distCalcY = DistanceCalculator()
     private val distCalcZ = DistanceCalculator()
+
+    private val client = HTTPClient()
+    private val clientText = client.get()
+
+    private var experimentIsActive: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,10 +111,22 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                                             z = this.z,
                                             distX = this.distCalcX,
                                             distY = this.distCalcY,
-                                            distZ = this.distCalcZ)
+                                            distZ = this.distCalcZ,
+                                            client = this.client.getResponseBody(),
+                                            buttonFunctionStart = this::startExperiment,
+                                            buttonFunctionEnd = this::endExperiment)
                 }
             }
         }
+    }
+
+    private fun startExperiment(){
+        experimentIsActive = true
+
+    }
+
+    private fun endExperiment(){
+        experimentIsActive = false
     }
 }
 
@@ -122,7 +141,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double, distX: DistanceCalculator, distY: DistanceCalculator, distZ: DistanceCalculator) {
+fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double,
+                           distX: DistanceCalculator,
+                           distY: DistanceCalculator,
+                           distZ: DistanceCalculator,
+                           client: String,
+                           buttonFunctionStart: () -> Unit,
+                           buttonFunctionEnd: () -> Unit) {
     Surface {
         Column {
             Text(text = "[ $timeStamp ]")
@@ -132,10 +157,18 @@ fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double, distX:
             Text(text = "distance x: ${distX.getDistance()}")
             Text(text = "distance y: ${distY.getDistance()}")
             Text(text = "distance z: ${distZ.getDistance()}")
+            Text(text = "client test: $client")
+
+            Button(onClick = buttonFunctionStart) {
+                Text(text = "Start experiment")
+            }
+            Button(onClick = buttonFunctionEnd) {
+                Text(text = "End experiment")
+            }
         }
-//        Text(text = "[ $timeStamp ] x: $x , y: $y, z: $z")
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
