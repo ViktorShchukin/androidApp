@@ -1,11 +1,13 @@
 package com.example.test
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.test.model.Data
+import com.example.test.model.Experiment
 import com.example.test.tools.HTTPClient
 import com.example.test.ui.theme.TestTheme
 import util.data.distance.DistanceCalculator
@@ -47,6 +51,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val clientText = client.get()
 
     private var experimentIsActive: Boolean = false
+    private lateinit var experiment: Experiment
+    private val dataList: MutableList<Data> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,21 +73,24 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         if (event!!.sensor.type != Sensor.TYPE_LINEAR_ACCELERATION) {
             return;
         }
-        if (event != null) {
-//            x = dfkX.correct(event.values[0].toDouble())
-//            y = dfkY.correct(event.values[1].toDouble())
-//            z = dfkZ.correct(event.values[2].toDouble())
-            x = event.values[0].toDouble()
-            y = event.values[1].toDouble()
-            z = event.values[2].toDouble()
-            if (x < 0.04 && x > -0.04) x=0.0
-            if (y < 0.04 && y > -0.04) y=0.0
-            if (z < 0.3 && z > -0.3) z=0.0
-            lastAccelerometerUpdateTime = event.timestamp
-            distCalcX.addAcceleration(x, lastAccelerometerUpdateTime)
-            distCalcY.addAcceleration(y, lastAccelerometerUpdateTime)
-            distCalcZ.addAcceleration(z, lastAccelerometerUpdateTime)
-            this.drawPage()
+
+//        x = dfkX.correct(event.values[0].toDouble())
+//        y = dfkY.correct(event.values[1].toDouble())
+//        z = dfkZ.correct(event.values[2].toDouble())
+        x = event.values[0].toDouble()
+        y = event.values[1].toDouble()
+        z = event.values[2].toDouble()
+//        if (x < 0.04 && x > -0.04) x=0.0
+//        if (y < 0.04 && y > -0.04) y=0.0
+//        if (z < 0.3 && z > -0.3) z=0.0
+        lastAccelerometerUpdateTime = event.timestamp
+        distCalcX.addAcceleration(x, lastAccelerometerUpdateTime)
+        distCalcY.addAcceleration(y, lastAccelerometerUpdateTime)
+        distCalcZ.addAcceleration(z, lastAccelerometerUpdateTime)
+        this.drawPage()
+        if (experimentIsActive) {
+            val data = Data(x, y, z, lastAccelerometerUpdateTime)
+            dataList.add(data)
         }
 
     }
@@ -120,13 +129,23 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
 
+//    @SuppressLint("HardwareIds")
     private fun startExperiment(){
         experimentIsActive = true
+        experiment = Experiment(name = "test-from-android",
+                                phoneBrand = Build.BRAND,
+                                phoneModel = Build.MODEL,
+                                phoneSerial = "",
+                                exTimestamp = System.currentTimeMillis(),
+                                comment = "") //todo how to create name for experiment
+
 
     }
 
     private fun endExperiment(){
         experimentIsActive = false
+        client.post(experiment, dataList)
+        dataList.removeAll(this.dataList)
     }
 }
 

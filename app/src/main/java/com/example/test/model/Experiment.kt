@@ -12,5 +12,5 @@ data class Experiment constructor(
         val phoneBrand: String,
         val phoneModel: String,
         val phoneSerial: String,
-        val exTimestamp: ZonedDateTime,
+        val exTimestamp: Long,
         val comment: String){}

@@ -3,10 +3,11 @@ package com.example.test.tools
 import com.example.test.model.Data
 import com.example.test.model.Experiment
 import com.example.test.tools.dto.ExperimentWithDataDTO
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -19,10 +20,9 @@ class HTTPClient {
     private val BASE_PATH: String = "http://10.0.2.2:8080/imu/experiment"
     private val client: OkHttpClient = OkHttpClient()
     private val responseBody: AtomicReference<String> = AtomicReference("")
+    private val MEDIA_TYPE_JSON: MediaType = "application/json".toMediaType()
 
-    private val moshi: Moshi = Moshi.Builder().build()
-    private val DTOadapter: JsonAdapter<ExperimentWithDataDTO> = moshi.adapter(ExperimentWithDataDTO::class.java)
-
+    private val mapper = jacksonObjectMapper()
     fun get(){
         val request = Request.Builder()
             .url(BASE_PATH)
@@ -43,11 +43,11 @@ class HTTPClient {
         }
 
     fun post(experiment: Experiment, dataList: List<Data>){
-        var dto = ExperimentWithDataDTO(experiment, dataList) //todo end this. reformat experiment and dataList to ExperimentWithDataDTO
-        var requestBody = DTOadapter.toJson(dto)
+        val dto = ExperimentWithDataDTO(experiment, dataList) //todo end this. reformat experiment and dataList to ExperimentWithDataDTO
+        val requestBody = mapper.writeValueAsString(dto)
         val request = Request.Builder()
             .url("$BASE_PATH/withdata")
-            .post(requestBody.toRequestBody())
+            .post(requestBody.toRequestBody(MEDIA_TYPE_JSON))
             .build()
 
         client.newCall(request).enqueue(object : Callback {
