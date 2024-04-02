@@ -17,7 +17,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +33,8 @@ import com.example.test.tools.HTTPClient
 import com.example.test.ui.theme.TestTheme
 import util.data.distance.DistanceCalculator
 import util.data.filter.KalmanFilter
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
 
 class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
@@ -53,6 +60,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var experimentIsActive: Boolean = false
     private lateinit var experiment: Experiment
     private val dataList: MutableList<Data> = mutableListOf()
+
+    var experimentName: AtomicReference<String> = AtomicReference("row_data_100_2_")
+//    var experimentName2 by rememberSaveable {
+//        mutableStateOf("")
+//    }
+        
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,8 +135,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                                             distY = this.distCalcY,
                                             distZ = this.distCalcZ,
                                             client = this.client.getResponseBody(),
+                                            experimentName = this.experimentName,
                                             buttonFunctionStart = this::startExperiment,
-                                            buttonFunctionEnd = this::endExperiment)
+                                            buttonFunctionEnd = this::endExperiment,
+                                            experimentState = this.experimentIsActive)
                 }
             }
         }
@@ -132,12 +147,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 //    @SuppressLint("HardwareIds")
     private fun startExperiment(){
         experimentIsActive = true
-        experiment = Experiment(name = "test-from-android",
+        experiment = Experiment(name = experimentName.get(),
                                 phoneBrand = Build.BRAND,
                                 phoneModel = Build.MODEL,
                                 phoneSerial = "",
-                                exTimestamp = System.currentTimeMillis(),
-                                comment = "") //todo how to create name for experiment
+                                exTimestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString(),
+                                comment = "row data, distance: 100 cm") //todo how to create name for experiment
 
 
     }
@@ -165,8 +180,10 @@ fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double,
                            distY: DistanceCalculator,
                            distZ: DistanceCalculator,
                            client: String,
+                           experimentName: AtomicReference<String>,
+                           experimentState: Boolean,
                            buttonFunctionStart: () -> Unit,
-                           buttonFunctionEnd: () -> Unit) {
+                           buttonFunctionEnd: () -> Unit,) {
     Surface {
         Column {
             Text(text = "[ $timeStamp ]")
@@ -177,6 +194,12 @@ fun DrawAccelerometerValue(timeStamp: Long, x:Double, y:Double, z:Double,
             Text(text = "distance y: ${distY.getDistance()}")
             Text(text = "distance z: ${distZ.getDistance()}")
             Text(text = "client test: $client")
+            Text(text = "experiment is active: $experimentState")
+            TextField(
+                value = experimentName.get(),
+                onValueChange = {experimentName.set(it)},
+                label = { Text(text = "experiment name")}
+                )
 
             Button(onClick = buttonFunctionStart) {
                 Text(text = "Start experiment")

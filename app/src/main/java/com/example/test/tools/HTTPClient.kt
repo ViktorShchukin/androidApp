@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 class HTTPClient {
 
-    private val BASE_PATH: String = "http://10.0.2.2:8080/imu/experiment"
+    private val BASE_PATH: String = "http://192.168.69.161:8080/imu/experiment"
     private val client: OkHttpClient = OkHttpClient()
     private val responseBody: AtomicReference<String> = AtomicReference("")
     private val MEDIA_TYPE_JSON: MediaType = "application/json".toMediaType()
@@ -37,7 +37,7 @@ class HTTPClient {
             override fun onResponse(call: Call, response: Response) {
                 if(!response.isSuccessful) throw IOException("Unexpected code $response")
 
-                responseBody.set(response.body!!.string())
+                responseBody.set("success") //.set(response.body!!.string())
             }
         })
         }
@@ -54,11 +54,13 @@ class HTTPClient {
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if(!response.isSuccessful) throw IOException("Unexpected code $response")
+                    responseBody.set("success2")
                 }
             }
 
             override fun onFailure(call: Call, e: java.io.IOException) {
-                e.printStackTrace()
+//                e.printStackTrace()
+                responseBody.set("fail: $e")
             }
         })
 
